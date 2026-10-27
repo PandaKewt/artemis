@@ -7,12 +7,16 @@
   // 1. Global Default Model (Applied to all sub-agents unless overridden below)
   // ------------------------------------------------------------------------------
   "default": {
-    "provider": "google",
-    "model": "gemini-3.8-flash",
+    // glm-5.3-flash is the ONLY vision-capable model on a GLM Coding Plan key
+    // (every other model rejects image content with error 1210). The default
+    // must stay vision-safe: the operator/summarizer/explorer send screenshots.
+    // Text-only nodes are explicitly overridden to the flagship glm-5.3 below.
+    "provider": "custom",
+    "model": "glm-5.3-flash",
     "thinking_level": "medium",
     "fallback": {
-      "provider": "google",
-      "model": "gemini-3.7-flash",
+      "provider": "custom",
+      "model": "glm-5.3-flash",
       "thinking_level": "medium"
     }
   },
@@ -36,6 +40,24 @@
       "model": "gpt-4o",
       "fallback": { "provider": "openai", "model": "gpt-4o-mini" }
     },
+    // Z.AI GLM-5.3 family via the OpenAI-compatible endpoint (provider "custom").
+    // OPENAI_BASE_URL in .env depends on the key type (plan keys are scoped to
+    // the coding endpoint; pay-as-you-go keys only work on the standard one):
+    //   GLM Coding Plan:   https://api.z.ai/api/coding/paas/v4
+    //   Pay-as-you-go API: https://api.z.ai/api/paas/v4
+    // Either way set OPENAI_API_KEY=<key>.
+    // NOTE: on a Coding Plan key glm-5.3-flash is the ONLY vision-capable model
+    // (others reject images with error 1210) — use "glm" for text-only workloads.
+    "glm-flash": {
+      "provider": "custom",
+      "model": "glm-5.3-flash",
+      "fallback": { "provider": "custom", "model": "glm-5.3-flash" }
+    },
+    "glm": {
+      "provider": "custom",
+      "model": "glm-5.3",
+      "fallback": { "provider": "custom", "model": "glm-5.3-flash" }
+    },
     "cost-saving": {
       "provider": "google",
       "model": "gemini-3.5-flash-lite",
@@ -53,8 +75,13 @@
   // ------------------------------------------------------------------------------
   "nodes": {
     // 🧠 Planner: High-level goal decomposition and strategic step planning
+    // (text-only workload — safe on the flagship glm-5.3, which has no vision
+    // on a Coding Plan key)
     "planner": {
-      "thinking_level": "high"
+      "thinking_level": "high",
+      "provider": "custom",
+      "model": "glm-5.3",
+      "fallback": { "provider": "custom", "model": "glm-5.3-flash" }
     },
 
     // 🎯 Operator: Screen perception, element interaction, and direct execution
@@ -95,15 +122,21 @@
 
     // 🔽 Hopper: Fast lightweight package name locator
     "hopper": {
-      "model": "gemini-3.5-flash-lite",
+      "provider": "custom",
+      "model": "glm-5.3-flash",
       "fallback": {
-        "provider": "google",
-        "model": "gemini-3.1-flash-lite"
+        "provider": "custom",
+        "model": "glm-5.3"
       }
     },
 
     // 📝 Outputter: Synthesizes execution trace into final output report
-    "outputter": {},
+    // (text-only workload — flagship quality where latency does not matter)
+    "outputter": {
+      "provider": "custom",
+      "model": "glm-5.3",
+      "fallback": { "provider": "custom", "model": "glm-5.3-flash" }
+    },
 
     // 🪵 Log Analyzer: Error log diagnosis with search grounding
     "log_analyzer": {
@@ -122,10 +155,24 @@
     "checker": {
       "thinking_level": "medium",
       "include_thoughts": true
-    }
+    },
     // 🎯 Planner Validation: Advisory review of milestone changes.
     // Defaults to the same lightweight model as the pixel safety net
     // (gemini-3.5-flash-lite, temperature 0); add "planner_validation": {...} here to override.
+    // Both judges are overridden below to the GLM light model so Pro runs do
+    // not require a GOOGLE_API_KEY.
+    "validator_pixel_safety_net": {
+      "provider": "custom",
+      "model": "glm-5.3-flash",
+      "temperature": 0.0,
+      "fallback": { "provider": "custom", "model": "glm-5.3", "temperature": 0.0 }
+    },
+    "planner_validation": {
+      "provider": "custom",
+      "model": "glm-5.3-flash",
+      "temperature": 0.0,
+      "fallback": { "provider": "custom", "model": "glm-5.3", "temperature": 0.0 }
+    }
   },
 
   // ------------------------------------------------------------------------------
@@ -145,7 +192,8 @@
       // replacing images only after strictly objective, high-density summaries are ready.
       "step_summarizer": {
         "enabled": true, // Whether background step summarization is active
-        "model": "gemini-3.5-flash-lite", // Lightweight model for fast background inference
+        "provider": "custom", // Provider for the lightweight background model
+        "model": "glm-5.3-flash", // Lightweight model for fast background inference
         "prune_history_xml": true // Prune outdated heavy XML trees from historical steps
       }
     },
@@ -246,7 +294,8 @@
         // call each); milestone closes are exempt, the hard line waives it.
         "min_steps": 3,
         "target_source_tokens": 2000,
-        "model": "gemini-3.8-flash",
+        "provider": "custom",
+        "model": "glm-5.3-flash",
         "max_chunks": 8
         // "max_eras": 8 // independent era cap; omitted = follows max_chunks
       },

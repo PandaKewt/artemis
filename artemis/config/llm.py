@@ -149,6 +149,26 @@ def _expand_default_into_nodes(config_dict: dict) -> dict:
 
     nodes_override = config_dict.get("nodes", {})
 
+    # The two high-frequency lightweight judges keep their factory default as
+    # the expansion base (not the global default model): without this, filling
+    # them from `default` would silently upgrade every safety-net call to the
+    # flagship model. Explicit `nodes` overrides still win.
+    lightweight_judge_cfg = {
+        "provider": "google",
+        "model": "gemini-3.5-flash-lite",
+        "temperature": 0.0,
+        "fallback": {
+            "provider": "google",
+            "model": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+        },
+    }
+
+    def _node_base(node: str) -> dict[str, Any]:
+        if node in ("validator_pixel_safety_net", "planner_validation"):
+            return dict(lightweight_judge_cfg)
+        return dict(default_model_cfg)
+
     all_agent_nodes = [
         "planner",
         "summarizer",
@@ -162,6 +182,8 @@ def _expand_default_into_nodes(config_dict: dict) -> dict:
         "history_analyzer_expert",
         "diagnoser_expert",
         "explorer",
+        "validator_pixel_safety_net",
+        "planner_validation",
     ]
 
     all_utils_nodes = [
@@ -173,7 +195,7 @@ def _expand_default_into_nodes(config_dict: dict) -> dict:
 
     result: dict[str, Any] = {}
     for node in all_agent_nodes:
-        node_cfg = dict(default_model_cfg)
+        node_cfg = _node_base(node)
         if node in nodes_override:
             for k, v in nodes_override[node].items():
                 if isinstance(v, dict) and isinstance(node_cfg.get(k), dict):

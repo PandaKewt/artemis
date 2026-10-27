@@ -871,7 +871,8 @@ invoke_llm_with_timeout_message = LLMWaitNotice(
 
 
 # Backward compatible factory functions delegating to ModelFactory
-def get_google_llm(
+def get_provider_llm(
+    provider: str = "google",
     model_name: str = "gemini-3.8-flash",
     temperature: float | None = None,
     timeout: float | None = None,
@@ -880,8 +881,9 @@ def get_google_llm(
     include_thoughts: bool | None = None,
     enable_grounding: bool = False,
 ) -> BaseChatModel:
+    """Build a chat model for any configured provider (not just Google)."""
     ep = ModelEndpoint(
-        provider=ModelProvider.GOOGLE,
+        provider=ModelProvider.from_string(provider),
         model_name=model_name,
         temperature=temperature or 0.0,
         timeout_seconds=timeout or 60.0,
@@ -891,6 +893,27 @@ def get_google_llm(
         enable_grounding=enable_grounding,
     )
     return ModelFactory.create_model(ep)
+
+
+def get_google_llm(
+    model_name: str = "gemini-3.8-flash",
+    temperature: float | None = None,
+    timeout: float | None = None,
+    thinking_budget: int | None = None,
+    thinking_level: str | None = "medium",
+    include_thoughts: bool | None = None,
+    enable_grounding: bool = False,
+) -> BaseChatModel:
+    return get_provider_llm(
+        "google",
+        model_name=model_name,
+        temperature=temperature,
+        timeout=timeout,
+        thinking_budget=thinking_budget,
+        thinking_level=thinking_level,
+        include_thoughts=include_thoughts,
+        enable_grounding=enable_grounding,
+    )
 
 
 def _resolve_endpoint(

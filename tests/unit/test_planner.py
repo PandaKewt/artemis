@@ -63,8 +63,9 @@ async def test_planner_validation():
 
 
 def test_planner_validation_node_defaults_to_lightweight_judge():
-    """Unconfigured planner_validation resolves to the same flash-lite default
-    as the pixel safety net (cheap, temperature 0)."""
+    """planner_validation mirrors the pixel safety net's judge (same model,
+    same provider, temperature 0) so the two high-frequency gates share one
+    cheap endpoint regardless of how the deployment tiers its models."""
     from artemis.config import get_default_llm_config
 
     llm_cfg = get_default_llm_config()
@@ -73,7 +74,6 @@ def test_planner_validation_node_defaults_to_lightweight_judge():
     assert node.model == safety_net.model
     assert node.provider == safety_net.provider
     assert node.temperature == 0.0
-    assert "lite" in node.model
 
 
 if __name__ == "__main__":

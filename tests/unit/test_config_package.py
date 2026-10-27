@@ -20,6 +20,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import SecretStr
 
+from typing import get_args
+
 from artemis.config import (
     CONFIG_DIR,
     ROOT_DIR,
@@ -45,6 +47,7 @@ from artemis.config import (
     write_ipc_port,
     write_ls_address,
 )
+from artemis.config.constants import LLMProvider
 
 
 def test_paths_and_directories():
@@ -152,7 +155,7 @@ def test_llm_config_parsing_and_merging():
     """Test LLMConfig parsing, agent querying, and deep merging."""
     llm_cfg = get_default_llm_config()
     assert isinstance(llm_cfg, LLMConfig)
-    assert llm_cfg.planner.provider in ("google", "openai", "openrouter", "xai", "vertexai")
+    assert llm_cfg.planner.provider in get_args(LLMProvider)
     assert llm_cfg.get_agent("planner") is not None
     assert llm_cfg.get_utils("hopper") is not None
 

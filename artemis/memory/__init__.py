@@ -54,6 +54,7 @@ def ensure_step_memory(ctx):
 
         cfg = load_agent_config()
         model_name = cfg.flash.step_summarizer.model
+        step_provider = getattr(cfg.flash.step_summarizer, "provider", None)
         kwargs = {
             "retry_limit": cfg.memory.runtime.retry_limit,
             "max_concurrency": cfg.memory.runtime.max_concurrency,
@@ -64,8 +65,11 @@ def ensure_step_memory(ctx):
             f"Agent config unavailable; using step-memory service defaults: {exc}",
             exc_info=True,
         )
+        step_provider = None
 
-    service = VisualStepSummarizer(ctx, model_name=model_name, **kwargs)
+    service = VisualStepSummarizer(
+        ctx, model_name=model_name, provider=step_provider, **kwargs
+    )
     try:
         ctx.step_memory = service
     except (AttributeError, TypeError, ValueError):

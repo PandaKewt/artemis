@@ -394,6 +394,10 @@ class StepSummarizerConfig(BaseModel):
         default="gemini-2.5-flash-lite",
         description="Lightweight model used for background step state summarization.",
     )
+    provider: str = Field(
+        default="google",
+        description="Provider for the step summarizer model (any LLMProvider value).",
+    )
     prune_history_xml: bool = Field(
         default=True,
         description="Whether to prune outdated heavy UI XML trees from historical turns.",
@@ -690,6 +694,10 @@ class MemoryChunkingConfig(BaseModel):
     model: str = Field(
         default="gemini-3.8-flash",
         description="Model used for the chunk-level StepCapsuleLens (bands ①+②).",
+    )
+    provider: str = Field(
+        default="google",
+        description="Provider for the chunk capsule model (any LLMProvider value).",
     )
     max_chunks: int = Field(
         default=8,
